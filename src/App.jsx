@@ -5,7 +5,10 @@ import { useState } from 'react';
 function App() {
     const [city, setCity] = useState('');
     const [weather, setWeather] = useState(null);
+    const [forecast, setForecast] = useState([]);
     const [loading, setLoading] = useState(false);
+    
+     
     async function handleSearch() {
 
        const cityName = city.trim();
@@ -25,8 +28,22 @@ function App() {
            alert(data.message);
            return;
          }
-
+         
          setWeather(data);
+         const forecastResponse = await fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${data.coord.lat}&lon=${data.coord.lon}&appid=42ffee81fb86878613a805bb547b6da3&units=metric`
+);
+          const forcastData = await forecastResponse.json();
+          if (!forecastResponse.ok) {
+            alert(forcastData.message);
+            return;
+          }
+          
+          
+          console.log(forcastData);
+          setForecast(forcastData.list);
+
+        
          console.log(data);
        } catch (error) {
          console.error(error);
@@ -34,6 +51,15 @@ function App() {
        } finally {
          setLoading(false);
        }
+
+       const dailyForcast = forecastData.list.filter(function (item) {
+        const localTime = new Date(
+          (item.dt + forcastData.city.timezone) * 1000
+        )
+        const hour = localTime.getUTCHours();
+        return hour >= 12 && hour < 15;
+      });
+      setForecast(dailyForcast.slice(0, 5));
     }
 
   return (
