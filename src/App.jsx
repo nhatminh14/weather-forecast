@@ -10,56 +10,56 @@ function App() {
     
      
     async function handleSearch() {
+      const cityName = city.trim();
+      if (cityName === '') return;
 
-       const cityName = city.trim();
-       console.log("Đang tìm thành phố:", cityName);
-       if (cityName === '') { 
-        console.log("Bạn chưa nhập tên thành phố. Vui lòng nhập tên thành phố để tìm kiếm.");
-        return;
-       }
-         setLoading(true);
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)}&appid=42ffee81fb86878613a805bb547b6da3&units=metric`
+        );
+        const data = await response.json();
+        if (!response.ok) {
+          alert(data.message);
+          return;
+        }
+        setWeather(data);
 
-       try {
-         const response = await fetch(
-           `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)}&appid=42ffee81fb86878613a805bb547b6da3&units=metric`
-         );
-         const data = await response.json();
-         if (!response.ok) {
-           alert(data.message);
-           return;
-         }
-         
-         setWeather(data);
-         const forecastResponse = await fetch(
+        const forecastResponse = await fetch(
           `https://api.openweathermap.org/data/2.5/forecast?lat=${data.coord.lat}&lon=${data.coord.lon}&appid=42ffee81fb86878613a805bb547b6da3&units=metric`
-);
-          const forcastData = await forecastResponse.json();
-          if (!forecastResponse.ok) {
-            alert(forcastData.message);
-            return;
-          }
-          
-          
-          console.log(forcastData);
-          setForecast(forcastData.list);
+        );
+        const forecastData = await forecastResponse.json();
+        if (!forecastResponse.ok) {
+          alert(forecastData.message);
+          return;
+        }
 
-        
-         console.log(data);
-       } catch (error) {
-         console.error(error);
-         alert("Không kết nối được. Bạn thử lại nhé!");
-       } finally {
-         setLoading(false);
-       }
-
-       const dailyForcast = forecastData.list.filter(function (item) {
-        const localTime = new Date(
-          (item.dt + forcastData.city.timezone) * 1000
-        )
-        const hour = localTime.getUTCHours();
-        return hour >= 12 && hour < 15;
-      });
-      setForecast(dailyForcast.slice(0, 5));
+        const dailyForecast = forecastData.list
+          .filter(function (item) {
+            const localTime = new Date(
+              (item.dt + forecastData.city.timezone) * 1000
+            );
+            const hour = localTime.getUTCHours();
+            return hour >= 12 && hour < 15;
+          })
+          .slice(0, 5)
+          .map(function (item) {
+            const localTime = new Date(
+              (item.dt + forecastData.city.timezone) * 1000
+            );
+            const dayName = localTime.toLocaleDateString('vi-VN', {
+              weekday: 'long',
+              timeZone: 'UTC'
+            });
+            return { ...item, dayName: dayName };
+          });
+        setForecast(dailyForecast);
+      } catch (error) {
+        console.error(error);
+        alert("Không kết nối được. Bạn thử lại nhé!");
+      } finally {
+        setLoading(false);
+      }
     }
 
   return (
@@ -169,13 +169,13 @@ function App() {
           </div>
           <div className="forecast-grid">
             <article className="forecast-card">
-              <h3>Ngày mai</h3><p className="forecast-order">Ngày 1</p>
+              <h3>{item.dayName}</h3><p className="forecast-order">Ngày 1</p>
               <div className="weather-symbol partly-cloudy" aria-hidden="true"><span className="symbol-sun"></span><span className="symbol-cloud"></span></div>
               <p className="forecast-condition">Có mây</p>
               <p className="forecast-temperature"><strong aria-label="Cao nhất 29 độ C">29°</strong><span aria-label="Thấp nhất 24 độ C">24°</span></p>
             </article>
             <article className="forecast-card">
-              <h3>Ngày thứ hai</h3><p className="forecast-order">Ngày 2</p>
+              <h3>Ngày kia</h3><p className="forecast-order">Ngày 2</p>
               <div className="weather-symbol rainy" aria-hidden="true"><span className="symbol-cloud"></span><span className="symbol-rain"></span></div>
               <p className="forecast-condition">Mưa nhẹ</p>
               <p className="forecast-temperature"><strong aria-label="Cao nhất 27 độ C">27°</strong><span aria-label="Thấp nhất 23 độ C">23°</span></p>
