@@ -1,6 +1,6 @@
 import './App.css';
 import { useEffect, useRef, useState } from "react";
-const WEATHER_API_KEY = "42ffee81fb86878613a805bb547b6da3";
+const WEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 
 const FEATURED_CITIES = [
   { query: "Hanoi,VN", label: "Hà Nội", country: "Việt Nam" },
@@ -47,7 +47,7 @@ const featuredRequest = useRef(null);
       setLoading(true);
       try {
         const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)}&appid=42ffee81fb86878613a805bb547b6da3&units=metric`
+          `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)}&appid=${WEATHER_API_KEY}&units=metric&lang=vi`
         );
         const data = await response.json();
         if (!response.ok) {
@@ -62,7 +62,7 @@ const featuredRequest = useRef(null);
         }
 
         const forecastResponse = await fetch(
-          `https://api.openweathermap.org/data/2.5/forecast?lat=${data.coord.lat}&lon=${data.coord.lon}&appid=42ffee81fb86878613a805bb547b6da3&units=metric`
+          `https://api.openweathermap.org/data/2.5/forecast?lat=${data.coord.lat}&lon=${data.coord.lon}&appid=${WEATHER_API_KEY}&units=metric&lang=vi`
         );
         const forecastData = await forecastResponse.json();
         if (!forecastResponse.ok) {
