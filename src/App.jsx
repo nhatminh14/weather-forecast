@@ -1,17 +1,48 @@
 import './App.css';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from "react";
+const WEATHER_API_KEY = "42ffee81fb86878613a805bb547b6da3";
+
+const FEATURED_CITIES = [
+  { query: "Hanoi,VN", label: "Hà Nội", country: "Việt Nam" },
+  { query: "Tokyo,JP", label: "Tokyo", country: "Nhật Bản" },
+  { query: "Paris,FR", label: "Paris", country: "Pháp" },
+  { query: "London,GB", label: "London", country: "Anh" },
+  { query: "New York,US", label: "New York", country: "Hoa Kỳ" }
+];
+
+function getSavedCity() {
+  try {
+    return localStorage.getItem("lastCity") || "";
+  } catch {
+    return "";
+  }
+}
 
 
 function App() {
-    const [city, setCity] = useState('');
+    const [city, setCity] = useState(getSavedCity);
     const [weather, setWeather] = useState(null);
     const [forecast, setForecast] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [temperatureUnit, setTemperatureUnit] = useState("C");
+    const [featuredCities, setFeaturedCities] = useState(
+  FEATURED_CITIES.map(function (city) {
+    return { ...city, weather: null, status: "loading" };
+  })
+);
+
+const featuredRequest = useRef(null);
     
      
-    async function handleSearch() {
-      const cityName = city.trim();
-      if (cityName === '') return;
+    async function handleSearch(citytoSearch = city) {
+  const cityName = citytoSearch.trim();
+
+  if (cityName === "") {
+    alert("Bạn chưa nhập tên thành phố");
+    return;
+  }
+
+  
 
       setLoading(true);
       try {
@@ -24,6 +55,11 @@ function App() {
           return;
         }
         setWeather(data);
+        try {
+        localStorage.setItem("lastCity", cityName);
+        } catch (storageError) {
+  console.warn("Không lưu được thành phố:", storageError);
+        }
 
         const forecastResponse = await fetch(
           `https://api.openweathermap.org/data/2.5/forecast?lat=${data.coord.lat}&lon=${data.coord.lon}&appid=42ffee81fb86878613a805bb547b6da3&units=metric`
@@ -61,7 +97,97 @@ function App() {
         setLoading(false);
       }
     }
+    const weatherThemes = {
+  Clear: "sunny",
+  Clouds: "cloudy",
+  Rain: "rainy",
+  Drizzle: "rainy",
+  Thunderstorm: "stormy",
+  Snow: "snowy",
+  Mist: "misty",
+  Fog: "misty",
+  Haze: "misty",
+  Smoke: "misty",
+  Dust: "misty",
+  Sand: "misty",
+  Ash: "misty",
+  Squall: "stormy",
+  Tornado: "stormy"
+};
 
+const currentCondition = weather?.weather?.[0]?.main;
+const weatherTheme = weatherThemes[currentCondition] || "default";
+
+const initialCity = useRef(city);
+const didAutoSearch = useRef(false);
+
+useEffect(function () {
+  if (didAutoSearch.current) {
+    return;
+  }
+
+  didAutoSearch.current = true;
+
+  if (initialCity.current) {
+    handleSearch(initialCity.current);
+  }
+
+  
+}, []);
+  function formatTemperature(celsius) {
+  if (temperatureUnit === "F") {
+    return Math.round(celsius * 9 / 5 + 32);
+  }
+
+  return Math.round(celsius);
+}
+  useEffect(function () {
+  let cancelled = false;
+
+  // Giữ lại Promise để không gọi trùng khi React
+  // kiểm tra Effect trong chế độ phát triển.
+  if (!featuredRequest.current) {
+    featuredRequest.current = Promise.all(
+      FEATURED_CITIES.map(async function (city) {
+        try {
+          const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city.query)}&appid=${WEATHER_API_KEY}&units=metric&lang=vi`
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Không lấy được thời tiết");
+          }
+
+          return {
+            ...city,
+            weather: data,
+            status: "success"
+          };
+        } catch (error) {
+          console.warn(`Không tải được thời tiết ${city.label}:`, error);
+
+          return {
+            ...city,
+            weather: null,
+            status: "error"
+          };
+        }
+      })
+    );
+  }
+
+  featuredRequest.current.then(function (results) {
+    if (!cancelled) {
+      setFeaturedCities(results);
+    }
+  });
+
+  return function () {
+    cancelled = true;
+  };
+}, []);
   return (
   
 
@@ -69,21 +195,43 @@ function App() {
 
 
 
-    <div className="weather-app">
+    <div className={`weather-app weather-${weatherTheme}`}>
       <header className="site-header">
         <a className="brand" href="#main-content" aria-label="Studydeck Weather — nội dung chính">
+          
           <span className="brand-icon" aria-hidden="true">S</span>
           <span><span className="brand-divider"></span>Thời tiết</span>
         </a>
-        <span className="demo-badge"><span aria-hidden="true"></span>Dữ liệu mẫu</span>
+        <button
+  type="button"
+  className="unit-button"
+  onClick={function () {
+    setTemperatureUnit(function (currentUnit) {
+      return currentUnit === "C" ? "F" : "C";
+    });
+  }}
+  aria-label={`Đổi sang độ ${temperatureUnit === "C" ? "F" : "C"}`}
+>
+  <span className={temperatureUnit === "C" ? "unit-active" : ""}>
+    °C
+  </span>
+
+  <span className={temperatureUnit === "F" ? "unit-active" : ""}>
+    °F
+  </span>
+</button>
+        <span className="demo-badge"><span aria-hidden="true"></span>Dữ liệu từ OpenWeatherMap</span>
       </header>
 
       <main id="main-content">
         {/* 1. Tiêu đề và tìm kiếm: chưa có xử lý sự kiện. */}
         <section className="intro" aria-labelledby="page-title">
-          <p className="eyebrow">MỘT CHÚT CHUẨN BỊ CHO NGÀY MỚI</p>
-          <h1 id="page-title">Hôm nay, trời thế nào?</h1>
-          <p className="intro-description">Xem thời tiết nơi bạn đến, lên kế hoạch cho ngày của mình.</p>
+  <h1 id="page-title">Hôm nay, trời thế nào?</h1>
+
+  {loading && (
+    <p className="loading-message">Đang tìm...</p>
+  )}
+          
 
           <form
             className="search-panel"
@@ -103,6 +251,12 @@ function App() {
                 type="search"
                 placeholder="Nhập tên thành phố, ví dụ: Hà Nội"
                 value={city}
+                onKeyDown={function (event) {
+                if (event.key === "Enter" && !loading) {
+                  event.preventDefault();
+                  handleSearch();
+                  }
+              }}
                 onChange={function (event) {
                 setCity(event.target.value);
                 }}
@@ -113,23 +267,106 @@ function App() {
                 {loading ? "Đang tìm..." : "Tìm thời tiết"} <span aria-hidden="true">↗</span>
               </button>
             </div>
-            <p id="search-note" className="search-note">Bản giao diện minh họa · Chức năng tìm kiếm chưa được kết nối.</p>
+            <p id="search-note" className="search-note">Bản giao diện minh họa · Nhập tên thành phố để xem thời tiết.</p>
           </form>
         </section>
 
         {/* 2. Thời tiết hiện tại: thay các giá trị mẫu bằng kết quả API sau. */}
-        <section className="current-weather" aria-labelledby="city-name">
+        
+          <section className="city-strip" aria-labelledby="city-strip-title">
+  <div className="city-strip-heading">
+    <h2 id="city-strip-title">Một vòng thế giới</h2>
+    <p>Chọn thành phố để khám phá thời tiết</p>
+  </div>
+
+  <div
+    className="city-strip-window"
+    role="region"
+    aria-label="Thời tiết các thành phố nổi bật"
+    tabIndex={0}
+  >
+    <div className="city-strip-track">
+      {[0, 1].map(function (copyIndex) {
+        return (
+          <div
+            className={`city-strip-group ${
+              copyIndex === 1 ? "city-strip-copy" : ""
+            }`}
+            key={copyIndex}
+            aria-hidden={copyIndex === 1 ? true : undefined}
+          >
+            {featuredCities.map(function (featuredCity) {
+              const currentWeather = featuredCity.weather;
+
+              return (
+                <button
+                  type="button"
+                  className="city-mini-card"
+                  key={featuredCity.query}
+                  tabIndex={copyIndex === 1 ? -1 : 0}
+                  disabled={loading}
+                  onClick={function () {
+                    setCity(featuredCity.label);
+                    handleSearch(featuredCity.query);
+                  }}
+                >
+                  <span className="city-mini-location">
+                    <span className="city-mini-name">
+                      {featuredCity.label}
+                    </span>
+
+                    <span className="city-mini-country">
+                      {featuredCity.country}
+                    </span>
+                  </span>
+
+                  {currentWeather ? (
+                    <>
+                      <img
+                        className="city-mini-icon"
+                        src={`https://openweathermap.org/img/wn/${currentWeather.weather[0].icon}@2x.png`}
+                        alt={currentWeather.weather[0].description}
+                      />
+
+                      <span className="city-mini-temperature">
+                        {formatTemperature(currentWeather.main.temp)}°{temperatureUnit}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="city-mini-status">
+                      {featuredCity.status === "loading"
+                        ? "Đang tải…"
+                        : "Chưa có dữ liệu"}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</section>
+          <section className="current-weather" aria-labelledby="city-name">
           <div className="current-copy">
             <p className="card-eyebrow">THỜI TIẾT HIỆN TẠI</p>
             <h2 id="city-name">{weather ? weather.name : "Chưa chọn thành phố"}<span className="country">{weather ? weather.sys.country : ""}</span></h2>
             <div className="temperature-line">
-              <span className="current-temperature">{weather ? Math.round(weather.main.temp) : "--"}<span className="temperature-unit">°C</span></span>
+              <span className="current-temperature">
+  {weather ? formatTemperature(weather.main.temp) : "--"}
+  <span className="temperature-unit">°{temperatureUnit}</span>
+</span>
               <div className="temperature-description">
                 <p className="weather-condition">{weather ? weather.weather[0].description : "--"}</p>
-                <p className="feels-like">Cảm giác như {weather ? Math.round(weather.main.feels_like) : "--"}°C</p>
+                <p className="feels-like">
+  Cảm giác như{" "}
+  {weather ? formatTemperature(weather.main.feels_like) : "--"}
+  °{temperatureUnit}
+</p>
               </div>
             </div>
-            <p className="temperature-range">Cao nhất <strong>30°</strong><span aria-hidden="true"> / </span>Thấp nhất <strong>24°</strong></p>
+            <p className="temperature-range">Cao nhất <strong>{weather ? formatTemperature(weather.main.temp_max) : "--"}</strong><span aria-hidden="true"> / </span><strong>{weather ? formatTemperature(weather.main.temp_min) : "--"}</strong></p>
           </div>
           <div className="current-art" aria-hidden="true">
             <div className="orbit orbit-outer"></div>
@@ -155,55 +392,55 @@ function App() {
             <p className="detail-description">Gió ở độ cao 10 m</p>
           </article>
           <article className="detail-card">
-            <span className="detail-icon" aria-hidden="true">↓</span>
-            <div><h3>Khả năng mưa</h3><p className="detail-value">20<span>%</span></p></div>
-            <p className="detail-description">Mức cao nhất trong ngày</p>
-          </article>
+  <span className="detail-icon" aria-hidden="true">↓</span>
+
+  <div>
+    <h3>Lượng mưa</h3>
+    <p className="detail-value">
+      {weather ? (weather.rain?.["1h"] ?? 0) : "--"}
+      <span>mm</span>
+    </p>
+  </div>
+
+  <p className="detail-description">Trong 1 giờ qua</p>
+</article>
         </section>
 
-        {/* 4. Năm thẻ mẫu. Khi học React, có thể đổi sang mảng và map. */}
+        
         <section className="forecast-section" aria-labelledby="forecast-title">
           <div className="section-heading">
-            <h2 id="forecast-title">Những ngày tiếp theo</h2>
-            <p>Dự báo 5 ngày</p>
-          </div>
+  <h2 id="forecast-title">Dự báo 5 ngày</h2>
+  <p>Thời tiết khoảng giữa trưa mỗi ngày</p>
+</div>
           <div className="forecast-grid">
-            <article className="forecast-card">
-              <h3>{item.dayName}</h3><p className="forecast-order">Ngày 1</p>
-              <div className="weather-symbol partly-cloudy" aria-hidden="true"><span className="symbol-sun"></span><span className="symbol-cloud"></span></div>
-              <p className="forecast-condition">Có mây</p>
-              <p className="forecast-temperature"><strong aria-label="Cao nhất 29 độ C">29°</strong><span aria-label="Thấp nhất 24 độ C">24°</span></p>
-            </article>
-            <article className="forecast-card">
-              <h3>Ngày kia</h3><p className="forecast-order">Ngày 2</p>
-              <div className="weather-symbol rainy" aria-hidden="true"><span className="symbol-cloud"></span><span className="symbol-rain"></span></div>
-              <p className="forecast-condition">Mưa nhẹ</p>
-              <p className="forecast-temperature"><strong aria-label="Cao nhất 27 độ C">27°</strong><span aria-label="Thấp nhất 23 độ C">23°</span></p>
-            </article>
-            <article className="forecast-card">
-              <h3>Ngày thứ ba</h3><p className="forecast-order">Ngày 3</p>
-              <div className="weather-symbol cloudy" aria-hidden="true"><span className="symbol-cloud"></span></div>
-              <p className="forecast-condition">Nhiều mây</p>
-              <p className="forecast-temperature"><strong aria-label="Cao nhất 28 độ C">28°</strong><span aria-label="Thấp nhất 23 độ C">23°</span></p>
-            </article>
-            <article className="forecast-card">
-              <h3>Ngày thứ tư</h3><p className="forecast-order">Ngày 4</p>
-              <div className="weather-symbol sunny" aria-hidden="true"><span className="symbol-sun"></span></div>
-              <p className="forecast-condition">Trời nắng</p>
-              <p className="forecast-temperature"><strong aria-label="Cao nhất 31 độ C">31°</strong><span aria-label="Thấp nhất 25 độ C">25°</span></p>
-            </article>
-            <article className="forecast-card">
-              <h3>Ngày thứ năm</h3><p className="forecast-order">Ngày 5</p>
-              <div className="weather-symbol partly-cloudy" aria-hidden="true"><span className="symbol-sun"></span><span className="symbol-cloud"></span></div>
-              <p className="forecast-condition">Nắng nhẹ</p>
-              <p className="forecast-temperature"><strong aria-label="Cao nhất 30 độ C">30°</strong><span aria-label="Thấp nhất 24 độ C">24°</span></p>
-            </article>
-          </div>
-          <p className="forecast-legend">Nhiệt độ cao nhất / thấp nhất · Đơn vị °C</p>
+  {forecast.map(function (item) {
+  return (
+    <article className="forecast-card" key={item.dt}>
+      <p className="forecast-day">{item.dayName}</p>
+
+      <img
+        className="forecast-icon"
+        src={`https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}
+        alt=""
+      />
+
+      
+      <strong className="forecast-temp">
+      {formatTemperature(item.main.temp)}°{temperatureUnit}
+        </strong>
+
+      <p className="forecast-condition">
+        {item.weather[0].description}
+      </p>
+    </article>
+  );
+})}
+</div>
+    
         </section>
       </main>
 
-      <footer className="site-footer"><span>studydeck weather</span><p>Số liệu chỉ để minh họa giao diện, không phải dự báo thực tế.</p></footer>
+      <footer className="site-footer"><span></span><p>Dữ liệu thời tiết từ OpenWeather.</p></footer>
     </div>
   );
 
