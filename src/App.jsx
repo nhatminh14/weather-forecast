@@ -1,5 +1,6 @@
 import './App.css';
 import { useEffect, useRef, useState } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 const WEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 
 const FEATURED_CITIES = [
@@ -366,8 +367,7 @@ useEffect(function () {
 </p>
               </div>
             </div>
-            <p className="temperature-range">Cao nhất <strong>{weather ? formatTemperature(weather.main.temp_max) : "--"}</strong><span aria-hidden="true"> / </span><strong>{weather ? formatTemperature(weather.main.temp_min) : "--"}</strong></p>
-          </div>
+            
           <div className="current-art" aria-hidden="true">
             <div className="orbit orbit-outer"></div>
             <div className="orbit orbit-inner"></div>
