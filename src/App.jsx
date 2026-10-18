@@ -1,6 +1,6 @@
 import './App.css';
 import { useEffect, useRef, useState } from "react";
-import { SpeedInsights } from "@vercel/speed-insights/next"
+
 const WEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 
 const FEATURED_CITIES = [
@@ -350,7 +350,7 @@ useEffect(function () {
   </div>
 </section>
           <section className="current-weather" aria-labelledby="city-name">
-          <div className="current-copy">
+          <div className="current-copy"></div>
             <p className="card-eyebrow">THỜI TIẾT HIỆN TẠI</p>
             <h2 id="city-name">{weather ? weather.name : "Chưa chọn thành phố"}<span className="country">{weather ? weather.sys.country : ""}</span></h2>
             <div className="temperature-line">
