@@ -350,61 +350,49 @@ useEffect(function () {
   </div>
 </section>
           <section className="current-weather" aria-labelledby="city-name">
-          <div className="current-copy"></div>
-            <p className="card-eyebrow">THỜI TIẾT HIỆN TẠI</p>
-            <h2 id="city-name">{weather ? weather.name : "Chưa chọn thành phố"}<span className="country">{weather ? weather.sys.country : ""}</span></h2>
-            <div className="temperature-line">
-              <span className="current-temperature">
-  {weather ? formatTemperature(weather.main.temp) : "--"}
-  <span className="temperature-unit">°{temperatureUnit}</span>
-</span>
-              <div className="temperature-description">
-                <p className="weather-condition">{weather ? weather.weather[0].description : "--"}</p>
-                <p className="feels-like">
-  Cảm giác như{" "}
-  {weather ? formatTemperature(weather.main.feels_like) : "--"}
-  °{temperatureUnit}
-</p>
-              </div>
-            </div>
-            
-          <div className="current-art" aria-hidden="true">
-            <div className="orbit orbit-outer"></div>
-            <div className="orbit orbit-inner"></div>
-            <div className="hero-sun"></div>
-            <div className="hero-cloud cloud-back"></div>
-            <div className="hero-cloud cloud-front"></div>
-            <span className="sky-spark spark-one">+</span>
-            <span className="sky-spark spark-two">+</span>
-          </div>
-        </section>
+  <div className="current-copy">
+    <p className="card-eyebrow">THỜI TIẾT HIỆN TẠI</p>
 
-        {/* 3. Ba chỉ số thời tiết. */}
-        <section className="weather-details" aria-label="Chi tiết thời tiết">
-          <article className="detail-card">
-            <span className="detail-icon" aria-hidden="true">≈</span>
-            <div><h3>Độ ẩm</h3><p className="detail-value">{weather ? weather.main.humidity : "--"}<span>%</span></p></div>
-            <p className="detail-description">Độ ẩm tương đối</p>
-          </article>
-          <article className="detail-card">
-            <span className="detail-icon" aria-hidden="true">↗</span>
-            <div><h3>Tốc độ gió</h3><p className="detail-value">{weather ? Math.round(weather.wind.speed * 3.6) : "--"}<span>km/h</span></p></div>
-            <p className="detail-description">Gió ở độ cao 10 m</p>
-          </article>
-          <article className="detail-card">
-  <span className="detail-icon" aria-hidden="true">↓</span>
+    <h2 id="city-name">
+      {weather ? weather.name : "Chưa chọn thành phố"}
+      <span className="country">
+        {weather ? weather.sys.country : ""}
+      </span>
+    </h2>
 
-  <div>
-    <h3>Lượng mưa</h3>
-    <p className="detail-value">
-      {weather ? (weather.rain?.["1h"] ?? 0) : "--"}
-      <span>mm</span>
-    </p>
+    <div className="temperature-line">
+      <span className="current-temperature">
+        {weather ? formatTemperature(weather.main.temp) : "--"}
+        <span className="temperature-unit">
+          °{temperatureUnit}
+        </span>
+      </span>
+
+      <div className="temperature-description">
+        <p className="weather-condition">
+          {weather ? weather.weather[0].description : "--"}
+        </p>
+
+        <p className="feels-like">
+          Cảm giác như{" "}
+          {weather ? formatTemperature(weather.main.feels_like) : "--"}
+          °{temperatureUnit}
+        </p>
+      </div>
+    </div>
   </div>
 
-  <p className="detail-description">Trong 1 giờ qua</p>
-</article>
-        </section>
+  <div className="current-art" aria-hidden="true">
+    <div className="orbit orbit-outer"></div>
+    <div className="orbit orbit-inner"></div>
+    <div className="hero-sun"></div>
+    <div className="hero-cloud cloud-back"></div>
+    <div className="hero-cloud cloud-front"></div>
+    <span className="sky-spark spark-one">+</span>
+    <span className="sky-spark spark-two">+</span>
+  </div>
+</section>
+        
 
         
         <section className="forecast-section" aria-labelledby="forecast-title">
