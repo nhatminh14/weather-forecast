@@ -57,7 +57,27 @@ const featuredRequest = useRef(null);
         }
         setWeather(data);
         try {
-        localStorage.setItem("lastCity", cityName);
+        // Giữ chức năng nhớ thành phố gần nhất
+localStorage.setItem("lastCity", cityName);
+
+// Đọc lịch sử cũ
+const history = JSON.parse(
+  localStorage.getItem("cityHistory") || "[]"
+);
+
+// Đưa thành phố vừa tìm lên đầu, bỏ tên trùng
+const updatedHistory = [
+  cityName,
+  ...history.filter(function (savedCity) {
+    return savedCity.toLowerCase() !== cityName.toLowerCase();
+  })
+].slice(0, 5);
+
+// Lưu tối đa 5 thành phố gần nhất
+localStorage.setItem(
+  "cityHistory",
+  JSON.stringify(updatedHistory)
+);
         } catch (storageError) {
   console.warn("Không lưu được thành phố:", storageError);
         }
@@ -190,11 +210,6 @@ useEffect(function () {
   };
 }, []);
   return (
-  
-
-
-
-
 
     <div className={`weather-app weather-${weatherTheme}`}>
       <header className="site-header">
